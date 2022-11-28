@@ -11,14 +11,17 @@ create_tables()
 def hello():
   return {"Hello world!"}
 
+#Test Case 1: List of Customers
 @app.get("/listofnames")
 def select_names():
   return get_list()
 
+#Test Case 2: List of Customers with only Name, E-Mail and Status
 @app.get("/names_attributes", response_class=HTMLResponse)
 def select_names():
   return get_list_with_attributes()
 
+#Test Case 3: List of Customers and their products
 @app.get("/belongings")
 def select_names():
   return get_belongings()
