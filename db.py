@@ -1,7 +1,6 @@
 import sqlite3
 from sqlite3 import Error
 
-
 def create_connection(db_file):
     """ create a database connection to a SQLite database """
     conn = None
@@ -25,13 +24,14 @@ def create_tables():
     
     # Creating table
     table_customer = """ CREATE TABLE CUSTOMERS (
+                Person_ID INTEGER PRIMARY KEY,
                 First_Name VARCHAR(25) NOT NULL,
                 Last_Name VARCHAR(25) NOT NULL,
                 Address VARCHAR(50),
                 Postal_Code VARCHAR(10),
                 Date_Of_Birth DATE,
                 Email VARCHAR(255) NOT NULL,
-                Status VARCHAR(10)            
+                Status VARCHAR(10)         
             ); """
     
     # Drop the GEEK table if already exists.
@@ -39,15 +39,29 @@ def create_tables():
     
     # Creating table
     table_product = """ CREATE TABLE PRODUCTS (
+                Product_ID INTEGER PRIMARY KEY,
                 Name VARCHAR(25) NOT NULL,
                 Balance FLOAT,
                 Product_Code VARCHAR(10),
-                Interest_Rate FLOAT        
+                Interest_Rate FLOAT  
             ); """
 
     cursor_obj.execute(table_customer)
     cursor_obj.execute(table_product)
     connection_obj.commit()
+
+    cursor_obj.execute("DROP TABLE IF EXISTS BELONGINGS")
+
+    table_customer_products = """ CREATE TABLE BELONGINGS (
+                Customer INTEGER,
+                Product INTEGER,
+                FOREIGN KEY(Customer) REFERENCES CUSTOMERS(Person_ID),
+                FOREIGN KEY(Product) REFERENCES PRODUCTS(Product_ID)
+            ); """
+
+    cursor_obj.execute(table_customer_products)
+    connection_obj.commit()
+
     # cursor_obj.execute(table_product)
 
     customers = [('Franzl', 'Lang', 'Liebhartsgasse 27', '1160', '1992-11-22', 'franzl@gmx.at', 'online'),
@@ -73,8 +87,20 @@ def create_tables():
 
     values = ', '.join(map(str, products))                      
     cursor_obj.execute("INSERT INTO PRODUCTS(Name, Balance, Product_Code, Interest_Rate) VALUES {};".format(values))
-    connection_obj.commit()    
+    connection_obj.commit()  
 
+    belongings = [(1, 1),
+                    (2, 1),
+                    (2, 2),
+                    (3, 5),
+                    (3, 1),
+                    (4, 1),
+                    (5, 1),
+                    (6, 5)]
+    
+    values = ', '.join(map(str, belongings))  
+    cursor_obj.execute("INSERT INTO BELONGINGS(Customer, Product) VALUES {};".format(values))
+    connection_obj.commit() 
     # cursor_obj.execute(Insert_product) 
 
     print("Table is Ready")
@@ -89,65 +115,52 @@ def get_list():
     # Drop the GEEK table if already exists.
     cursor_obj.execute("SELECT * FROM CUSTOMERS;")
     rows = cursor_obj.fetchall()
-    arr = []
 
-    for row in rows:
-        arr.append(row)
+    # string = "<br>".join(' '.join(row) for row in rows)
+    
+    return rows
 
-    return arr
+def get_list_with_attributes():
+    connection_obj = sqlite3.connect(r"C:\Users\xpara\SWE_API\db\pythonsqlite.db")
+    
+    # cursor object
+    cursor_obj = connection_obj.cursor()
+    
+    # Drop the GEEK table if already exists.
+    cursor_obj.execute("SELECT First_Name, Last_Name, Email, Status FROM CUSTOMERS;")
+    rows = cursor_obj.fetchall()
+    
 
+    string = "<br>".join(' '.join(row)for row in rows)
+    
+    return string
 
+def get_belongings():
+    connection_obj = sqlite3.connect(r"C:\Users\xpara\SWE_API\db\pythonsqlite.db")
+    
+    # cursor object
+    cursor_obj = connection_obj.cursor()
+    
+    # Drop the GEEK table if already exists.
+    cursor_obj.execute(""" SELECT b.First_Name, c.Name 
+                            FROM BELONGINGS a
+                            JOIN CUSTOMERS b
+                            ON a.Customer = b.Person_ID
+                            JOIN PRODUCTS c
+                            ON a.Product = c.Product_ID
+    """)
+    rows = cursor_obj.fetchall()
 
+    # cursor_obj.execute(""" SELECT a.Customer, a.Product, b.First_Name, c.Name 
+    #                         FROM BELONGINGS a
+    #                         JOIN CUSTOMERS b
+    #                         ON a.Customer = b.Person_ID
+    #                         JOIN PRODUCTS c
+    #                         ON a.Product = c.Product_ID
+    # """)
 
-# def insert_test_data():
-#     connection_obj = sqlite3.connect('pythonsqlite.db')
-#     cursor_obj = connection_obj.cursor()
-
-#     Insert_customer = """ INSERT INTO CUSTOMERS
-#                             (First_Name, Last_Name, Address, Postal_Code, Date_Of_Birth, Email, Status)
-#                         VALUES
-#                             (Franzl, Lang, Burggasse_27, 1150, 1993-12-12, franzl@gmx.at, online),
-#                             (Alex, Kurz, Burggasse_27, 1150, 1993-12-12, Alex@gmx.at, away),
-#                             (Mark, Huber, Burggasse_27, 1150, 1993-12-12, Mark@gmx.at, offline),
-#                             (Oliver, Kahn, Burggasse_27, 1150, 1993-12-12, Oliver@gmx.at, away),
-#                             (Joachim, Rhabarber, Burggasse_27, 1150, 1993-12-12, Joachim@gmx.at, offline),
-#                             (Sarah, Zichmann, Burggasse_27, 1150, 1993-12-12, Sarah@gmx.at, offline),
-#                             (Annalena, Lager, Burggasse_27, 1150, 1993-12-12, Annalena@gmx.at, offline),
-#                             (Maria, Robust, Burggasse_27, 1150, 1993-12-12, Maria@gmx.at, online),
-#                             (Hannah, Augartner, Burggasse_27, 1150, 1993-12-12, Hannah@gmx.at, online),
-#                             (Julia, Legano, Burggasse_27, 1150, 1993-12-12, Julia@gmx.at, away); """
-
-#     Insert_product = """ INSERT INTO PRODUCTS
-#                             (Name, Balance, Product_Code, Interest_Rate)
-#                         VALUES
-#                             (Schwarzbrot, 1.50, 67YZ4T630J, 0.01),
-#                             (Apfel, 1.35, JFZWIAYWU1, 0.03),
-#                             (PlayStation, 399.50, VKN78HT4ZW, 0.15),
-#                             (Maus, 11.40, 3JMA9CH8DC, 0.02),
-#                             (Keyboard, 31.50, YT8ZGMWTXJ, 0.12); """    
-
-#     # cursor_obj.execute(Insert_customer)
-
-#     customers = [('Franzl', 'Lang', 'Burggasse_27', '1150', '1993-12-12', 'franzl@gmx.at', 'online'),
-#                         ('Alex', 'Kurz', 'Burggasse_27', '1150', '1993-12-12', 'Alex@gmx.at', 'away'),
-#                         ('Mark', 'Huber', 'Burggasse_27', '1150', '1993-12-12', 'Mark@gmx.at', 'offline'),
-#                         ('Oliver', 'Kahn', 'Burggasse_27', '1150', '1993-12-12', 'Oliver@gmx.at', 'away'),
-#                         ('Joachim', 'Rhabarber', 'Burggasse_27', '1150', '1993-12-12', 'Joachim@gmx.at', 'offline'),
-#                         ('Sarah', 'Zichmann', 'Burggasse_27', '1150', '1993-12-12', 'Sarah@gmx.at', 'offline'),
-#                         ('Annalena', 'Lager', 'Burggasse_27', '1150', '1993-12-12', 'Annalena@gmx.at', 'offline'),
-#                         ('Maria', 'Robust', 'Burggasse_27', '1150', '1993-12-12', 'Maria@gmx.at', 'online'),
-#                         ('Hannah', 'Augartner', 'Burggasse_27', '1150', '1993-12-12', 'Hannah@gmx.at', 'online'),
-#                         ('Julia', 'Legano', 'Burggasse_27', '1150', '1993-12-12', 'Julia@gmx.at', 'away')]
-#     values = ', '.join(map(str, customers))                      
-#     cursor_obj.executemany("INSERT INTO CUSTOMERS(First_Name, Last_Name, Address, Postal_Code, Date_Of_Birth, Email, Status) VALUES {};".format(values))
-
-#     # cursor_obj.execute(Insert_product)   
-#     connection_obj.close() 
-
-
-
-# names = ["apple", "banana", "cherry"]
-
+    
+    return rows  
 
 
 # cursor.execute("INSERT INTO barcodes(barcode) VALUES ('{}');".format(names))
